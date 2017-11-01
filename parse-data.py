@@ -5,6 +5,9 @@ import json
 import requests
 
 COMBINED_JSON = {}
+GEOCODED_JSON = {}
+URL_BASE = 'https://maps.google.com/maps/api/geocode/json'
+API_KEY = 'AIzaSyCGpG15mvCafMGJ-ujhMGolgOXr_YoabUQ'
 
 FILE_INPUT = io.open('missingkids.json')
 FILE_RAW = FILE_INPUT.read()
@@ -20,9 +23,19 @@ for record in PARSED_JSON['persons']:
         COMBINED_JSON[location]['magnitude'] = COMBINED_JSON[location]['magnitude'] + 1
 
 # For each city, call Google API to geocode results
-for record in COMBINED_JSON:
-    r = requests.get('https://google.com')
-    print r.raw
-print COMBINED_JSON
+for record, value in COMBINED_JSON.iteritems():
+    params = {
+        'key': API_KEY,
+        'address': record
+    }
+    r = requests.get(URL_BASE, params)
+    result = r.json()['results'][0]['geometry']['location']
+
+    GEOCODED_JSON[record] = {}
+    GEOCODED_JSON[record]['magnitude'] = value['magnitude']
+    GEOCODED_JSON[record]['latitude'] = result['lat']
+    GEOCODED_JSON[record]['longitude'] = result['lng']
+
+print GEOCODED_JSON
 with open('parsed-results.json', 'wb') as outfile:
-    json.dump(COMBINED_JSON, outfile)
+    json.dump(GEOCODED_JSON, outfile)
